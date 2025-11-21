@@ -30,6 +30,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { BrowserFrame } from "@/components/BrowserFrame";
+import { SavedTestsTable } from "@/components/SavedTestsTable";
+import { TestDefinition } from "@/lib/types";
 
 interface TestHistoryStep {
   message: string;
@@ -37,9 +39,9 @@ interface TestHistoryStep {
 }
 
 export default function Home() {
-  const [url, setUrl] = useState("https://resumi.cv");
-  const [instructions, setInstructions] = useState("Go to sign in page");
-  const [outcome, setOutcome] = useState("User is redirected to login");
+  const [url, setUrl] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [outcome, setOutcome] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -47,6 +49,11 @@ export default function Home() {
 
   // Mock live steps for visualization (Real app would stream this)
   const [liveSteps, setLiveSteps] = useState<TestHistoryStep[]>([]);
+
+  // Saved tests state
+  const [savedTests, setSavedTests] = useState<TestDefinition[]>([]);
+  const [loadingTests, setLoadingTests] = useState(false);
+  const [currentTestDefinitionId, setCurrentTestDefinitionId] = useState<string | undefined>();
 
   const handleRunTest = async () => {
     if (!url || !instructions) return;
@@ -62,10 +69,54 @@ export default function Home() {
 
       const baseUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
 
+      // Save test only if we don't have currentTestDefinitionId
+      // This prevents duplicates when running existing tests
+      let savedTestId = currentTestDefinitionId;
+      if (!savedTestId) {
+        try {
+          // Generate default name, handling URLs without protocol
+          let defaultName = "New Test";
+          try {
+            const urlObj = new URL(url);
+            defaultName = `Test for ${urlObj.hostname}`;
+          } catch {
+            // If URL is invalid (e.g., missing protocol), use the raw URL
+            defaultName = `Test for ${url}`;
+          }
+
+          const saveResponse = await fetch(`${baseUrl}/test-definitions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: defaultName,
+              url,
+              instructions,
+              desiredOutcome: outcome,
+            }),
+          });
+
+          if (saveResponse.ok) {
+            const { testDefinition } = await saveResponse.json();
+            savedTestId = testDefinition.id;
+            setCurrentTestDefinitionId(savedTestId);
+            // Refresh saved tests list in background
+            fetchSavedTests();
+          }
+        } catch (err) {
+          console.error("Failed to save test:", err);
+          // Continue with test run even if save fails
+        }
+      }
+
       const startResponse = await fetch(`${baseUrl}/tests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, instructions, outcome }),
+        body: JSON.stringify({
+          url,
+          instructions,
+          outcome,
+          testDefinitionId: savedTestId // Link to saved test
+        }),
       });
 
       if (!startResponse.ok) {
@@ -102,10 +153,24 @@ export default function Home() {
               screenshot: statusData.screenshot,
             });
             setLoading(false);
+            // Refresh saved tests to show updated status
+            fetchSavedTests();
+            // Clear form for next test
+            setUrl("");
+            setInstructions("");
+            setOutcome("");
+            setCurrentTestDefinitionId(undefined);
           } else if (statusData.status === "FAILED") {
             clearInterval(pollInterval);
             setError(statusData.error || "Test failed");
             setLoading(false);
+            // Refresh saved tests to show updated status
+            fetchSavedTests();
+            // Clear form for next test
+            setUrl("");
+            setInstructions("");
+            setOutcome("");
+            setCurrentTestDefinitionId(undefined);
           }
         } catch (err) {
           console.error("Polling error:", err);
@@ -114,6 +179,157 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
+    }
+  };
+
+  // Fetch saved tests on component mount
+  useEffect(() => {
+    fetchSavedTests();
+  }, []);
+
+  const fetchSavedTests = async () => {
+    try {
+      setLoadingTests(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) return;
+
+      const baseUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
+      const response = await fetch(`${baseUrl}/test-definitions`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setSavedTests(data.testDefinitions || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch saved tests:", err);
+    } finally {
+      setLoadingTests(false);
+    }
+  };
+
+  const handleRunSavedTest = async (test: TestDefinition) => {
+    // Set the current test ID to prevent duplicates
+    setCurrentTestDefinitionId(test.id);
+
+    // Load the test data
+    setUrl(test.url);
+    setInstructions(test.instructions);
+    setOutcome(test.desiredOutcome);
+
+    // Clear previous results
+    setResult(null);
+    setError("");
+
+    // Scroll to top to show the form
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Run the test immediately with the existing test ID
+    setLoading(true);
+    setLiveSteps([{ message: "Initializing Agent...", status: "pending" }]);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) throw new Error("API URL not configured");
+
+      const baseUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
+
+      // Start the test run with the existing test ID
+      const startResponse = await fetch(`${baseUrl}/tests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: test.url,
+          instructions: test.instructions,
+          outcome: test.desiredOutcome,
+          testDefinitionId: test.id, // Link to existing test
+        }),
+      });
+
+      if (!startResponse.ok) {
+        const err = await startResponse.json();
+        throw new Error(err.error || "Failed to start test");
+      }
+
+      const { testId } = await startResponse.json();
+
+      // Poll for Status
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`${baseUrl}/tests/${testId}`);
+          const statusData = await statusResponse.json();
+
+          // Update live feed from backend history if available
+          if (statusData.history && Array.isArray(statusData.history)) {
+            const formattedSteps = statusData.history.map((h: string) => ({
+              message: h,
+              status: h.toLowerCase().includes("failed") ? "failed" : "success",
+            }));
+            setLiveSteps(formattedSteps);
+          } else {
+            setLiveSteps((prev) => [
+              ...prev,
+              { message: "Agent is thinking...", status: "pending" },
+            ]);
+          }
+
+          if (statusData.status === "COMPLETED") {
+            clearInterval(pollInterval);
+            setResult({
+              message: statusData.result,
+              screenshot: statusData.screenshot,
+            });
+            setLoading(false);
+            fetchSavedTests();
+            // Clear form for next test
+            setUrl("");
+            setInstructions("");
+            setOutcome("");
+            setCurrentTestDefinitionId(undefined);
+          } else if (statusData.status === "FAILED") {
+            clearInterval(pollInterval);
+            setError(statusData.error || "Test failed");
+            setLoading(false);
+            fetchSavedTests();
+            // Clear form for next test
+            setUrl("");
+            setInstructions("");
+            setOutcome("");
+            setCurrentTestDefinitionId(undefined);
+          }
+        } catch (err) {
+          console.error("Polling error:", err);
+        }
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTest = async (testId: string) => {
+    if (!confirm("Are you sure you want to delete this test?")) return;
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) return;
+
+      const baseUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
+      const response = await fetch(`${baseUrl}/test-definitions/${testId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete test");
+      }
+
+      // Clear currentTestDefinitionId if we deleted the current test
+      setCurrentTestDefinitionId(undefined);
+
+      // Refresh the list immediately
+      await fetchSavedTests();
+    } catch (err) {
+      console.error("Failed to delete test:", err);
+      alert("Failed to delete test");
     }
   };
 
@@ -127,7 +343,7 @@ export default function Home() {
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <span className="font-bold text-xl tracking-tight text-slate-900">
-              FlowTest<span className="text-blue-600">.ai</span>
+              AutomateQA<span className="text-blue-600">.ai</span>
             </span>
             <Badge
               variant="secondary"
@@ -342,27 +558,18 @@ export default function Home() {
             {result && (
               <div className="space-y-6 animate-in fade-in duration-500">
                 {/* Status Banner */}
-                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-4 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-emerald-100 p-2 rounded-full">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-emerald-900">
-                        Test Passed Successfully
-                      </h3>
-                      <p className="text-sm text-emerald-700">
-                        Verification confirmed by Agent.
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 p-4 rounded-xl">
+                  <div className="bg-emerald-100 p-2 rounded-full">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.location.reload()}
-                    className="bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
-                  >
-                    Run New Test
-                  </Button>
+                  <div>
+                    <h3 className="font-bold text-emerald-900">
+                      Test Passed Successfully
+                    </h3>
+                    <p className="text-sm text-emerald-700">
+                      Verification confirmed by Agent.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Browser View */}
@@ -403,6 +610,16 @@ export default function Home() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Saved Tests Section */}
+        <div className="mt-12">
+          <SavedTestsTable
+            tests={savedTests}
+            onRunTest={handleRunSavedTest}
+            onDeleteTest={handleDeleteTest}
+            isLoading={loadingTests}
+          />
         </div>
       </main>
     </div>
