@@ -192,6 +192,18 @@ export function SavedTestsTable({
                       <h5 className="text-sm font-semibold mb-1 text-muted-foreground">Desired Outcome</h5>
                       <p className="text-sm whitespace-pre-wrap">{test.desiredOutcome}</p>
                     </div>
+                    {test.lastRunScreenshot && (
+                      <div>
+                        <h5 className="text-sm font-semibold mb-2 text-muted-foreground">Last Run Screenshot</h5>
+                        <div className="rounded-lg border bg-white overflow-hidden">
+                          <img
+                            src={test.lastRunScreenshot}
+                            alt="Last test run screenshot"
+                            className="w-full h-auto"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
