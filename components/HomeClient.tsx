@@ -66,12 +66,17 @@ export default function HomeClient({ user }: HomeClientProps) {
     string | undefined
   >();
 
+  // Screenshot display state
+  const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
+  const [selectedTest, setSelectedTest] = useState<TestDefinition | null>(null);
+
   const handleRunTest = async () => {
     if (!url || !instructions) return;
 
     setLoading(true);
     setResult(null);
     setError("");
+    setCurrentScreenshot(null); // Clear previous screenshot
     setLiveSteps([{ message: "Initializing Agent...", status: "pending" }]);
 
     try {
@@ -152,6 +157,11 @@ export default function HomeClient({ user }: HomeClientProps) {
             },
           });
           const statusData = await statusResponse.json();
+
+          // Update screenshot if available (even during execution)
+          if (statusData.screenshot) {
+            setCurrentScreenshot(statusData.screenshot);
+          }
 
           // Update live feed from backend history if available
           if (statusData.history && Array.isArray(statusData.history)) {
@@ -244,6 +254,7 @@ export default function HomeClient({ user }: HomeClientProps) {
     // Clear previous results
     setResult(null);
     setError("");
+    setCurrentScreenshot(null); // Clear previous screenshot
 
     // Scroll to top to show the form
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -289,6 +300,11 @@ export default function HomeClient({ user }: HomeClientProps) {
             },
           });
           const statusData = await statusResponse.json();
+
+          // Update screenshot if available (even during execution)
+          if (statusData.screenshot) {
+            setCurrentScreenshot(statusData.screenshot);
+          }
 
           // Update live feed from backend history if available
           if (statusData.history && Array.isArray(statusData.history)) {
@@ -529,69 +545,109 @@ export default function HomeClient({ user }: HomeClientProps) {
               </div>
             )}
 
-            {/* EMPTY STATE */}
+            {/* EMPTY STATE / SCREENSHOT DISPLAY */}
             {!loading && !result && !error && (
-              <div className="h-full min-h-[500px] border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
-                <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                  <LayoutDashboard className="w-8 h-8 text-slate-300" />
-                </div>
-                <h3 className="font-medium text-slate-900">Ready to Test</h3>
-                <p className="text-sm">
-                  Enter your test parameters on the left to begin.
-                </p>
+              <div className="h-full min-h-[500px] border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center bg-slate-50/50">
+                {currentScreenshot ? (
+                  <div className="w-full h-full p-6 flex flex-col">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="font-medium text-slate-900">Last Test Screenshot</h3>
+                      <span className="text-sm text-slate-500">Live Preview</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center bg-white rounded-lg border border-slate-200 overflow-hidden">
+                      <img
+                        src={currentScreenshot}
+                        alt="Test screenshot"
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-slate-400">
+                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                      <LayoutDashboard className="w-8 h-8 text-slate-300" />
+                    </div>
+                    <h3 className="font-medium text-slate-900">Ready to Test</h3>
+                    <p className="text-sm">
+                      Enter your test parameters on the left to begin.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* LOADING / RUNNING STATE - TIMELINE */}
+            {/* LOADING / RUNNING STATE - SCREENSHOT WITH OVERLAY LOGS */}
             {loading && (
-              <Card className="border-slate-200 shadow-sm">
-                <CardHeader className="pb-3 border-b border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                      Live Execution Log
-                    </CardTitle>
-                    <Badge
-                      variant="outline"
-                      className="animate-pulse text-blue-600 border-blue-200 bg-blue-50"
-                    >
-                      Running
-                    </Badge>
+              <div className="relative h-full min-h-[700px] rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-900">
+                {/* Screenshot Background */}
+                {currentScreenshot ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+                    <img
+                      src={currentScreenshot}
+                      alt="Live test execution"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <ScrollArea className="h-[400px] p-6">
-                    <div className="space-y-6">
-                      {liveSteps.map((step, i) => (
-                        <div key={i} className="flex gap-4 group">
-                          <div className="flex flex-col items-center">
-                            <div
-                              className={`w-2.5 h-2.5 rounded-full ring-4 ring-white ${
-                                step.status === "success"
-                                  ? "bg-emerald-500"
-                                  : step.status === "failed"
-                                  ? "bg-red-500"
-                                  : "bg-blue-500 animate-pulse"
-                              }`}
-                            />
-                            {i !== liveSteps.length - 1 && (
-                              <div className="w-px h-full bg-slate-200 my-1" />
-                            )}
-                          </div>
-                          <div className="pb-2">
-                            <p className="text-sm font-medium text-slate-800">
-                              {step.message}
-                            </p>
-                            <span className="text-xs text-slate-400 font-mono">
-                              {new Date().toLocaleTimeString()}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-slate-400">
+                      <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" />
+                      <p className="text-sm">Waiting for screenshot...</p>
                     </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+                  </div>
+                )}
+
+                {/* Execution Log Overlay - Bottom */}
+                <div className="absolute bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-700">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
+                        <span className="text-sm font-semibold text-slate-100">
+                          Live Execution Log
+                        </span>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="animate-pulse text-blue-400 border-blue-500/50 bg-blue-500/10"
+                      >
+                        Running
+                      </Badge>
+                    </div>
+
+                    <ScrollArea className="h-[180px]">
+                      <div className="space-y-3 pr-4">
+                        {liveSteps.map((step, i) => (
+                          <div key={i} className="flex gap-3 group">
+                            <div className="flex flex-col items-center">
+                              <div
+                                className={`w-2 h-2 rounded-full ring-4 ring-slate-900 ${
+                                  step.status === "success"
+                                    ? "bg-emerald-400"
+                                    : step.status === "failed"
+                                    ? "bg-red-400"
+                                    : "bg-blue-400 animate-pulse"
+                                }`}
+                              />
+                              {i !== liveSteps.length - 1 && (
+                                <div className="w-px h-full bg-slate-700 my-1" />
+                              )}
+                            </div>
+                            <div className="pb-1 flex-1">
+                              <p className="text-sm font-medium text-slate-200">
+                                {step.message}
+                              </p>
+                              <span className="text-xs text-slate-500 font-mono">
+                                {new Date().toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* RESULT STATE */}
