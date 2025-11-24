@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   History,
   LogOut,
+  Clock,
 } from "lucide-react";
 import {
   Card,
@@ -29,6 +30,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { BrowserFrame } from "@/components/BrowserFrame";
 import { SavedTestsTable } from "@/components/SavedTestsTable";
 import { TestDefinition } from "@/lib/types";
@@ -69,6 +78,10 @@ export default function HomeClient({ user }: HomeClientProps) {
   // Screenshot display state
   const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
   const [selectedTest, setSelectedTest] = useState<TestDefinition | null>(null);
+
+  // Scheduling state
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduleInterval, setScheduleInterval] = useState<"15m" | "30m" | "1h" | "6h" | "12h" | "24h">("1h");
 
   const handleRunTest = async () => {
     if (!url || !instructions) return;
@@ -111,6 +124,8 @@ export default function HomeClient({ user }: HomeClientProps) {
               url,
               instructions,
               desiredOutcome: outcome,
+              isScheduled,
+              scheduleInterval: isScheduled ? scheduleInterval : undefined,
             }),
           });
 
@@ -190,6 +205,8 @@ export default function HomeClient({ user }: HomeClientProps) {
             setUrl("");
             setInstructions("");
             setOutcome("");
+            setIsScheduled(false);
+            setScheduleInterval("1h");
             setCurrentTestDefinitionId(undefined);
           } else if (statusData.status === "FAILED") {
             clearInterval(pollInterval);
@@ -201,6 +218,8 @@ export default function HomeClient({ user }: HomeClientProps) {
             setUrl("");
             setInstructions("");
             setOutcome("");
+            setIsScheduled(false);
+            setScheduleInterval("1h");
             setCurrentTestDefinitionId(undefined);
           }
         } catch (err) {
@@ -332,6 +351,8 @@ export default function HomeClient({ user }: HomeClientProps) {
             setUrl("");
             setInstructions("");
             setOutcome("");
+            setIsScheduled(false);
+            setScheduleInterval("1h");
             setCurrentTestDefinitionId(undefined);
           } else if (statusData.status === "FAILED") {
             clearInterval(pollInterval);
@@ -342,6 +363,8 @@ export default function HomeClient({ user }: HomeClientProps) {
             setUrl("");
             setInstructions("");
             setOutcome("");
+            setIsScheduled(false);
+            setScheduleInterval("1h");
             setCurrentTestDefinitionId(undefined);
           }
         } catch (err) {
@@ -494,6 +517,60 @@ export default function HomeClient({ user }: HomeClientProps) {
                     onChange={(e) => setOutcome(e.target.value)}
                     className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   />
+                </div>
+
+                <Separator className="my-4" />
+
+                {/* Scheduling Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label
+                        htmlFor="schedule-toggle"
+                        className="text-slate-700 font-semibold flex items-center gap-1.5"
+                      >
+                        <Clock className="w-4 h-4" /> Schedule Test
+                      </Label>
+                      <p className="text-xs text-slate-500">
+                        Run this test automatically at regular intervals
+                      </p>
+                    </div>
+                    <Switch
+                      id="schedule-toggle"
+                      checked={isScheduled}
+                      onCheckedChange={setIsScheduled}
+                    />
+                  </div>
+
+                  {isScheduled && (
+                    <div className="space-y-2 animate-in slide-in-from-top-2">
+                      <Label
+                        htmlFor="interval"
+                        className="text-slate-700 font-medium"
+                      >
+                        Run Every
+                      </Label>
+                      <Select
+                        value={scheduleInterval}
+                        onValueChange={(value: any) => setScheduleInterval(value)}
+                      >
+                        <SelectTrigger className="bg-slate-50 border-slate-200">
+                          <SelectValue placeholder="Select interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15m">15 minutes</SelectItem>
+                          <SelectItem value="30m">30 minutes</SelectItem>
+                          <SelectItem value="1h">1 hour</SelectItem>
+                          <SelectItem value="6h">6 hours</SelectItem>
+                          <SelectItem value="12h">12 hours</SelectItem>
+                          <SelectItem value="24h">24 hours (Daily)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Scheduled tests will run automatically and save results
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
               <CardFooter className="pt-2 pb-6">

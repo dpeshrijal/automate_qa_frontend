@@ -14,6 +14,9 @@ export interface TestDefinition {
   lastRunAt?: string;
   lastRunStatus?: "COMPLETED" | "FAILED" | "RUNNING";
   lastRunScreenshot?: string;
+  isScheduled?: boolean;
+  scheduleInterval?: "15m" | "30m" | "1h" | "6h" | "12h" | "24h";
+  scheduleName?: string;
 }
 
 export interface TestRun {

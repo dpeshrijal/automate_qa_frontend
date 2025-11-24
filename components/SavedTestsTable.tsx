@@ -147,6 +147,16 @@ export function SavedTestsTable({
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
                         <h4 className="font-semibold">{test.name}</h4>
+                        {test.isScheduled && (
+                          <Badge variant="secondary" className="gap-1 text-xs">
+                            <Clock className="h-3 w-3" />
+                            Every {test.scheduleInterval === "15m" ? "15 min" :
+                                  test.scheduleInterval === "30m" ? "30 min" :
+                                  test.scheduleInterval === "1h" ? "1 hr" :
+                                  test.scheduleInterval === "6h" ? "6 hrs" :
+                                  test.scheduleInterval === "12h" ? "12 hrs" : "24 hrs"}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-1">
                         {test.url}
