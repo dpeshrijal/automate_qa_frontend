@@ -8,13 +8,8 @@ import {
   Loader2,
   Globe,
   Sparkles,
-  Terminal,
-  Target,
   LayoutDashboard,
-  History,
   LogOut,
-  Clock,
-  Bell,
 } from "lucide-react";
 import {
   Card,
@@ -29,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -39,7 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BrowserFrame } from "@/components/BrowserFrame";
 import { SavedTestsTable } from "@/components/SavedTestsTable";
 import { TestDefinition } from "@/lib/types";
 import { signOut } from "next-auth/react";
@@ -78,7 +71,6 @@ export default function HomeClient({ user }: HomeClientProps) {
 
   // Screenshot display state
   const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
-  const [selectedTest, setSelectedTest] = useState<TestDefinition | null>(null);
 
   // Scheduling state
   const [isScheduled, setIsScheduled] = useState(false);
@@ -416,132 +408,102 @@ export default function HomeClient({ user }: HomeClientProps) {
     }
   };
 
+
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/signin" });
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50">
       {/* Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-        <div className="container mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="container mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-blue-600 p-1.5 rounded-lg">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900">
-              AutomateQA<span className="text-blue-600">.ai</span>
+            <Sparkles className="w-5 h-5 text-indigo-600" />
+            <span className="font-semibold text-base text-slate-900">
+              AutomateQA.ai
             </span>
-            <Badge
-              variant="secondary"
-              className="ml-2 bg-slate-100 text-slate-600 border-slate-200"
-            >
-              MVP
-            </Badge>
           </div>
-          <div className="flex items-center gap-4 text-sm font-medium text-slate-500">
-            <span className="text-slate-700">{user.email}</span>
-            <button
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-600 hidden md:block">{user.email}</span>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleSignOut}
-              className="flex items-center gap-2 hover:text-red-600 transition-colors"
-              title="Sign out"
+              className="text-slate-600 hover:text-slate-900"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 mr-2" />
               Sign out
-            </button>
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 md:px-8 py-8">
-        {/* Header Section */}
-        <div className="mb-8 max-w-3xl">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
-            Automated Quality Assurance
-          </h1>
-          <p className="text-lg text-slate-500 leading-relaxed">
-            Describe your test case in natural language. Our AI Agent will
-            navigate, interact, and verify your application logic automatically.
-          </p>
-        </div>
-
+      <main className="container mx-auto px-4 md:px-8 py-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* LEFT COL: CONFIGURATION (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
-            <Card className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
+          {/* LEFT COL: CONFIGURATION (5 cols) */}
+          <div className="lg:col-span-5">
+            <Card className="border border-slate-200 bg-white shadow-sm">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <LayoutDashboard className="w-5 h-5 text-blue-600" />
+                <CardTitle className="text-base font-semibold text-slate-900">
                   Test Configuration
                 </CardTitle>
-                <CardDescription>
-                  Define the parameters for your E2E test.
+                <CardDescription className="text-sm text-slate-600">
+                  Define test parameters in natural language
                 </CardDescription>
               </CardHeader>
               <Separator />
-              <CardContent className="space-y-5 pt-6">
+              <CardContent className="space-y-4 pt-6">
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="url"
-                    className="text-slate-700 font-semibold flex items-center gap-1.5"
-                  >
-                    <Globe className="w-4 h-4" /> Target URL
+                  <Label htmlFor="url" className="text-sm font-medium text-slate-700">
+                    Target URL
                   </Label>
                   <Input
                     id="url"
                     placeholder="https://app.example.com"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                    className="h-10"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="instructions"
-                    className="text-slate-700 font-semibold flex items-center gap-1.5"
-                  >
-                    <Terminal className="w-4 h-4" /> Instructions
+                  <Label htmlFor="instructions" className="text-sm font-medium text-slate-700">
+                    Test Instructions
                   </Label>
                   <Textarea
                     id="instructions"
-                    placeholder="e.g. Log in with user 'demo' and password '123', then navigate to settings."
-                    className="min-h-[120px] bg-slate-50 border-slate-200 focus:bg-white resize-none leading-relaxed transition-all"
+                    placeholder="Describe what the AI agent should do..."
+                    className="min-h-[120px] resize-none"
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="outcome"
-                    className="text-slate-700 font-semibold flex items-center gap-1.5"
-                  >
-                    <Target className="w-4 h-4" /> Desired Outcome
+                  <Label htmlFor="outcome" className="text-sm font-medium text-slate-700">
+                    Expected Outcome
                   </Label>
                   <Input
                     id="outcome"
-                    placeholder="e.g. The 'Dashboard' header should be visible."
+                    placeholder="What should the agent verify?"
                     value={outcome}
                     onChange={(e) => setOutcome(e.target.value)}
-                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                    className="h-10"
                   />
                 </div>
 
                 <Separator className="my-4" />
 
                 {/* Scheduling Section */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label
-                        htmlFor="schedule-toggle"
-                        className="text-slate-700 font-semibold flex items-center gap-1.5"
-                      >
-                        <Clock className="w-4 h-4" /> Schedule Test
+                    <div>
+                      <Label htmlFor="schedule-toggle" className="text-sm font-medium text-slate-700">
+                        Schedule Test
                       </Label>
-                      <p className="text-xs text-slate-500">
-                        Run this test automatically at regular intervals
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Run automatically at regular intervals
                       </p>
                     </div>
                     <Switch
@@ -552,45 +514,34 @@ export default function HomeClient({ user }: HomeClientProps) {
                   </div>
 
                   {isScheduled && (
-                    <div className="space-y-2 animate-in slide-in-from-top-2">
-                      <Label
-                        htmlFor="interval"
-                        className="text-slate-700 font-medium"
-                      >
-                        Run Every
+                    <div className="space-y-2 pl-4 border-l-2 border-indigo-200">
+                      <Label htmlFor="interval" className="text-sm font-medium text-slate-700">
+                        Frequency
                       </Label>
                       <Select
                         value={scheduleInterval}
                         onValueChange={(value: any) => setScheduleInterval(value)}
                       >
-                        <SelectTrigger className="bg-slate-50 border-slate-200">
-                          <SelectValue placeholder="Select interval" />
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="15m">15 minutes</SelectItem>
-                          <SelectItem value="30m">30 minutes</SelectItem>
-                          <SelectItem value="1h">1 hour</SelectItem>
-                          <SelectItem value="6h">6 hours</SelectItem>
-                          <SelectItem value="12h">12 hours</SelectItem>
-                          <SelectItem value="24h">24 hours (Daily)</SelectItem>
+                          <SelectItem value="15m">Every 15 minutes</SelectItem>
+                          <SelectItem value="30m">Every 30 minutes</SelectItem>
+                          <SelectItem value="1h">Every hour</SelectItem>
+                          <SelectItem value="6h">Every 6 hours</SelectItem>
+                          <SelectItem value="12h">Every 12 hours</SelectItem>
+                          <SelectItem value="24h">Daily</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Scheduled tests will run automatically and save results
-                      </p>
                     </div>
                   )}
                 </div>
 
-                <Separator className="my-4" />
-
                 {/* Slack Integration Section */}
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="slack-webhook"
-                    className="text-slate-700 font-semibold flex items-center gap-1.5"
-                  >
-                    <Bell className="w-4 h-4" /> Slack Webhook URL (Optional)
+                  <Label htmlFor="slack-webhook" className="text-sm font-medium text-slate-700">
+                    Slack Webhook (Optional)
                   </Label>
                   <Input
                     id="slack-webhook"
@@ -598,221 +549,212 @@ export default function HomeClient({ user }: HomeClientProps) {
                     placeholder="https://hooks.slack.com/services/..."
                     value={slackWebhookUrl}
                     onChange={(e) => setSlackWebhookUrl(e.target.value)}
-                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                    className="h-10"
                   />
                   <p className="text-xs text-slate-500">
-                    Get notified in Slack when tests pass or fail. <a href="https://api.slack.com/messaging/webhooks" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Get webhook URL</a>
+                    Get notified when tests complete
                   </p>
                 </div>
               </CardContent>
-              <CardFooter className="pt-2 pb-6">
+              <CardFooter className="pt-4 pb-6 px-6">
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200 h-11 text-base font-medium transition-all active:scale-95"
+                  className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
                   onClick={handleRunTest}
                   disabled={loading || !url || !instructions}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Agent Running...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Running Test...
                     </>
                   ) : (
                     <>
-                      <Play className="mr-2 h-5 w-5 fill-white/20" />
-                      Start Test Run
+                      <Play className="mr-2 h-4 w-4" />
+                      Start Test
                     </>
                   )}
                 </Button>
               </CardFooter>
             </Card>
 
-            {/* Helper Tips */}
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-blue-800 mb-2">
-                Pro Tips
-              </h4>
-              <ul className="text-xs text-blue-600 space-y-1 list-disc list-inside">
-                <li>Be specific about button names (e.g., &quot;Click &apos;Save&apos;&quot;).</li>
-                <li>Mentions credentials clearly in the instructions.</li>
-                <li>Ensure the Outcome describes a visible text change.</li>
-              </ul>
-            </div>
           </div>
 
-          {/* RIGHT COL: EXECUTION & RESULTS (8 cols) */}
-          <div className="lg:col-span-8 space-y-6">
+          {/* RIGHT COL: EXECUTION & RESULTS (7 cols) */}
+          <div className="lg:col-span-7">
             {/* ERROR STATE */}
             {error && (
-              <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 animate-in slide-in-from-top-2">
-                <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-red-900">
-                    Execution Failed
-                  </h3>
-                  <p className="text-sm text-red-700 mt-1">{error}</p>
-                </div>
-              </div>
+              <Card className="border border-red-200 bg-white shadow-sm h-[800px] flex items-center justify-center">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 bg-red-50 rounded-lg">
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-base text-slate-900 mb-1">
+                        Test Failed
+                      </h3>
+                      <p className="text-sm text-slate-600">{error}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* EMPTY STATE / SCREENSHOT DISPLAY */}
+            {/* EMPTY STATE */}
             {!loading && !result && !error && (
-              <div className="h-full min-h-[500px] border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center bg-slate-50/50">
-                {currentScreenshot ? (
-                  <div className="w-full h-full p-6 flex flex-col">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h3 className="font-medium text-slate-900">Last Test Screenshot</h3>
-                      <span className="text-sm text-slate-500">Live Preview</span>
+              <Card className="border border-slate-200 bg-white shadow-sm h-[800px] flex items-center justify-center">
+                <div className="p-12 w-full">
+                  {currentScreenshot ? (
+                    <div className="w-full max-w-4xl mx-auto">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-sm text-slate-900">Previous Test</h3>
+                          <p className="text-xs text-slate-500 mt-0.5">Last execution result</p>
+                        </div>
+                      </div>
+                      <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                        <img
+                          src={currentScreenshot}
+                          alt="Test screenshot"
+                          className="w-full h-auto max-h-[600px] object-contain"
+                        />
+                      </div>
                     </div>
-                    <div className="flex-1 flex items-center justify-center bg-white rounded-lg border border-slate-200 overflow-hidden">
-                      <img
-                        src={currentScreenshot}
-                        alt="Test screenshot"
-                        className="max-w-full max-h-full object-contain"
-                      />
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                        <LayoutDashboard className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                        No Tests Running
+                      </h3>
+                      <p className="text-sm text-slate-500 max-w-sm mx-auto">
+                        Configure your test on the left and click "Start Test" to begin
+                      </p>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-400">
-                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                      <LayoutDashboard className="w-8 h-8 text-slate-300" />
-                    </div>
-                    <h3 className="font-medium text-slate-900">Ready to Test</h3>
-                    <p className="text-sm">
-                      Enter your test parameters on the left to begin.
-                    </p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </Card>
             )}
 
-            {/* LOADING / RUNNING STATE - SCREENSHOT WITH OVERLAY LOGS */}
+            {/* LOADING STATE */}
             {loading && (
-              <div className="relative h-full min-h-[700px] rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-900">
-                {/* Screenshot Background */}
+              <Card className="border border-slate-200 bg-white shadow-sm h-[800px] flex flex-col overflow-hidden">
+                {/* Screenshot Display */}
                 {currentScreenshot ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+                  <div className="border-b border-slate-200 flex-shrink-0">
                     <img
                       src={currentScreenshot}
                       alt="Live test execution"
-                      className="w-full h-full object-contain"
+                      className="w-full h-auto max-h-[400px] object-contain"
                     />
                   </div>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-slate-400">
-                      <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" />
-                      <p className="text-sm">Waiting for screenshot...</p>
+                  <div className="h-[400px] flex items-center justify-center bg-slate-50 border-b border-slate-200 flex-shrink-0">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-indigo-600" />
+                      <p className="text-sm font-medium text-slate-900">Launching browser...</p>
+                      <p className="text-xs text-slate-500 mt-1">Test execution starting</p>
                     </div>
                   </div>
                 )}
 
-                {/* Execution Log Overlay - Bottom */}
-                <div className="absolute bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-700">
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-3">
+                {/* Execution Steps - Scrollable */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2">
                       <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                        <span className="text-sm font-semibold text-slate-100">
-                          Live Execution Log
-                        </span>
+                        <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                        <span className="text-sm font-semibold text-slate-900">Running Test</span>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="animate-pulse text-blue-400 border-blue-500/50 bg-blue-500/10"
-                      >
-                        Running
+                      <Badge className="bg-indigo-50 text-indigo-700 border-0 text-xs">
+                        In Progress
                       </Badge>
                     </div>
 
-                    <ScrollArea className="h-[180px]">
-                      <div className="space-y-3 pr-4">
-                        {liveSteps.map((step, i) => (
-                          <div key={i} className="flex gap-3 group">
-                            <div className="flex flex-col items-center">
-                              <div
-                                className={`w-2 h-2 rounded-full ring-4 ring-slate-900 ${
-                                  step.status === "success"
-                                    ? "bg-emerald-400"
-                                    : step.status === "failed"
-                                    ? "bg-red-400"
-                                    : "bg-blue-400 animate-pulse"
-                                }`}
-                              />
-                              {i !== liveSteps.length - 1 && (
-                                <div className="w-px h-full bg-slate-700 my-1" />
-                              )}
-                            </div>
-                            <div className="pb-1 flex-1">
-                              <p className="text-sm font-medium text-slate-200">
-                                {step.message}
-                              </p>
-                              <span className="text-xs text-slate-500 font-mono">
-                                {new Date().toLocaleTimeString()}
-                              </span>
-                            </div>
+                    <div className="space-y-3">
+                      {liveSteps.map((step, i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <div className="mt-0.5">
+                            {step.status === "success" ? (
+                              <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              </div>
+                            ) : step.status === "failed" ? (
+                              <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center">
+                                <XCircle className="w-3 h-3 text-red-600" />
+                              </div>
+                            ) : (
+                              <div className="w-4 h-4 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <Loader2 className="w-3 h-3 text-indigo-600 animate-spin" />
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-slate-700">{step.message}</p>
+                            <span className="text-xs text-slate-400">
+                              {new Date().toLocaleTimeString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* RESULT STATE */}
             {result && (
-              <div className="space-y-6 animate-in fade-in duration-500">
-                {/* Status Banner */}
-                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 p-4 rounded-xl">
-                  <div className="bg-emerald-100 p-2 rounded-full">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-emerald-900">
-                      Test Passed Successfully
-                    </h3>
-                    <p className="text-sm text-emerald-700">
-                      Verification confirmed by Agent.
-                    </p>
+              <Card className="border border-slate-200 bg-white shadow-sm h-[800px] flex flex-col overflow-hidden">
+                {/* Success Header */}
+                <div className="bg-emerald-50 border-b border-emerald-200 px-6 py-4 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-900">Test Passed</h3>
+                        <p className="text-xs text-slate-600">All steps completed successfully</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">
+                      Success
+                    </Badge>
                   </div>
                 </div>
 
-                {/* Browser View */}
-                <BrowserFrame url={url}>
-                  {result.screenshot ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+                {/* Screenshot */}
+                {result.screenshot ? (
+                  <div className="border-b border-slate-200 flex-shrink-0">
                     <img
                       src={result.screenshot}
                       alt="Test Result"
-                      className="w-full h-full object-contain"
+                      className="w-full h-auto max-h-[400px] object-contain"
                     />
-                  ) : (
-                    <div className="text-slate-400 flex flex-col items-center">
-                      <Globe className="w-12 h-12 mb-2 opacity-20" />
-                      <p>No screenshot captured</p>
+                  </div>
+                ) : (
+                  <div className="h-[400px] flex items-center justify-center bg-slate-50 border-b border-slate-200 flex-shrink-0">
+                    <div className="text-center">
+                      <Globe className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+                      <p className="text-sm text-slate-500">No screenshot available</p>
                     </div>
-                  )}
-                </BrowserFrame>
+                  </div>
+                )}
 
-                {/* Detailed Logs */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <History className="w-4 h-4" />
-                      Agent Decision History
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-slate-900 rounded-lg p-4 font-mono text-xs text-slate-300 overflow-x-auto leading-relaxed">
-                      {/* We display the final message from backend */}
-                      <p className="text-emerald-400">
-                        $ agent report --status=success
-                      </p>
-                      <p className="mt-2">{result.message}</p>
+                {/* Result Details - Scrollable */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-6">
+                    <h4 className="text-xs font-semibold text-slate-900 uppercase tracking-wide mb-3">
+                      Test Result
+                    </h4>
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                      <p className="text-sm text-slate-700 leading-relaxed">{result.message}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                </div>
+              </Card>
             )}
           </div>
         </div>
