@@ -14,6 +14,7 @@ import {
   History,
   LogOut,
   Clock,
+  Bell,
 } from "lucide-react";
 import {
   Card,
@@ -83,6 +84,9 @@ export default function HomeClient({ user }: HomeClientProps) {
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduleInterval, setScheduleInterval] = useState<"15m" | "30m" | "1h" | "6h" | "12h" | "24h">("1h");
 
+  // Slack integration state
+  const [slackWebhookUrl, setSlackWebhookUrl] = useState("");
+
   const handleRunTest = async () => {
     if (!url || !instructions) return;
 
@@ -126,6 +130,7 @@ export default function HomeClient({ user }: HomeClientProps) {
               desiredOutcome: outcome,
               isScheduled,
               scheduleInterval: isScheduled ? scheduleInterval : undefined,
+              slackWebhookUrl: slackWebhookUrl || undefined,
             }),
           });
 
@@ -207,6 +212,7 @@ export default function HomeClient({ user }: HomeClientProps) {
             setOutcome("");
             setIsScheduled(false);
             setScheduleInterval("1h");
+            setSlackWebhookUrl("");
             setCurrentTestDefinitionId(undefined);
           } else if (statusData.status === "FAILED") {
             clearInterval(pollInterval);
@@ -220,6 +226,7 @@ export default function HomeClient({ user }: HomeClientProps) {
             setOutcome("");
             setIsScheduled(false);
             setScheduleInterval("1h");
+            setSlackWebhookUrl("");
             setCurrentTestDefinitionId(undefined);
           }
         } catch (err) {
@@ -353,6 +360,7 @@ export default function HomeClient({ user }: HomeClientProps) {
             setOutcome("");
             setIsScheduled(false);
             setScheduleInterval("1h");
+            setSlackWebhookUrl("");
             setCurrentTestDefinitionId(undefined);
           } else if (statusData.status === "FAILED") {
             clearInterval(pollInterval);
@@ -365,6 +373,7 @@ export default function HomeClient({ user }: HomeClientProps) {
             setOutcome("");
             setIsScheduled(false);
             setScheduleInterval("1h");
+            setSlackWebhookUrl("");
             setCurrentTestDefinitionId(undefined);
           }
         } catch (err) {
@@ -571,6 +580,29 @@ export default function HomeClient({ user }: HomeClientProps) {
                       </p>
                     </div>
                   )}
+                </div>
+
+                <Separator className="my-4" />
+
+                {/* Slack Integration Section */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="slack-webhook"
+                    className="text-slate-700 font-semibold flex items-center gap-1.5"
+                  >
+                    <Bell className="w-4 h-4" /> Slack Webhook URL (Optional)
+                  </Label>
+                  <Input
+                    id="slack-webhook"
+                    type="url"
+                    placeholder="https://hooks.slack.com/services/..."
+                    value={slackWebhookUrl}
+                    onChange={(e) => setSlackWebhookUrl(e.target.value)}
+                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Get notified in Slack when tests pass or fail. <a href="https://api.slack.com/messaging/webhooks" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Get webhook URL</a>
+                  </p>
                 </div>
               </CardContent>
               <CardFooter className="pt-2 pb-6">

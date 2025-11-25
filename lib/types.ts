@@ -17,6 +17,7 @@ export interface TestDefinition {
   isScheduled?: boolean;
   scheduleInterval?: "15m" | "30m" | "1h" | "6h" | "12h" | "24h";
   scheduleName?: string;
+  slackWebhookUrl?: string;
 }
 
 export interface TestRun {
